@@ -7,7 +7,7 @@ output:
     df_print: paged
 ---
 #### UTEID: str786
-#### Github link:
+#### Github link: https://github.com/Sreyesiv/SDS315.git
 
 
 ### Problem 1, Beauty or not, in the classroom
@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(readr)
 library(tidyverse)
 library(DescTools)
+library(dplyr)
 ```
 
 
@@ -207,12 +208,14 @@ With this plot it is a lot easier to see the differences and how it being a work
 #code (weathersit, x), faceted according to whether it is a working day or not. (Remember that you
 #can focus on a specific subset of rows of a data set using filter.)
 
+#data wrangling
 weather_avg_bikes <- bikeshare %>%
   filter(hr == '9') %>%
   select(workingday, weathersit, total) %>%
   group_by(workingday, weathersit) %>%
   summarize(avg_bike_rentals = mean(total), .groups = 'drop')
 
+#plotting
 weather_avg_plot <- weather_avg_bikes %>%
   mutate(weathersit = factor(weathersit, levels = c("1", "2", "3", "4"))) %>%
   ggplot(aes(x = weathersit, y = avg_bike_rentals, fill = weathersit)) +
@@ -239,8 +242,70 @@ This bar graph shows that as the conditions go from cloudy to rainy and everythi
 \
 
 ### Problem 3: Capital Metro UT Ridership
+\
 
+```{r}
+capmetro_UT <- read_csv("capmetro_UT.csv", show_col_types = FALSE
+)
 
+#data wrangling
+grouped_metro_data <- capmetro_UT %>%
+  mutate(
+    hour_of_day = as.numeric(hour_of_day),
+    timestamp = as.POSIXct(timestamp, format = "%Y-%m-%d %H:%M:%S")
+  ) %>%
+  group_by(day_of_week, month, hour_of_day) %>%
+  summarize(avg_boardings = mean(boarding), .groups = 'drop')
+
+# Plotting the faceted line graph 
+grouped_metro_data %>%
+  ggplot(aes(x = hour_of_day, y = avg_boardings, color = factor(month))) +
+  geom_line() +
+  facet_grid(day_of_week ~ ., scales = "free_y") +
+  labs(
+    title = "Average Boardings by Hour, Day of Week, and Month",
+    x = "Hour of the Day",
+    y = "Average Boardings",
+    color = "Month"
+  ) +
+    scale_x_continuous(breaks = seq(0, 23, by = 1)) +
+  theme_minimal()
+```
+\
+This line graph shows the average number of people boarding throughout the hours of the day. The hour is on the x-axis and the y-axis is the average number of people boarding. The lines of the graph each showcase a different month in order to see the differences in peaks of users. The graph is also faceted by week day in order to compare the changes between the days. The higher the peak the more bus riders there were at that given month, day, and time. It is worth mentioning that the limit for the y-axis changes between the facets for better readability, however this can make the data to seem less variable than it actually is.
+\
+\
+This graph shows that the hour of peak boarding does change everyday, or at least has some variation. This can be seen in the way that the peaks do not line up between the different facet despite them being in general agreement. I think that mondays in september are lower because people and students are just getting back on campus and school which they may only be using the bus system during school. Lastly, I think that the averages were lower on wednesdays, thursdays, and fridays in November because these are days where students are in school and not necessarily needing a bus to get to their classes.
+\
+\
+\
+\
+```{r}
+temperature_boardings <- capmetro_UT %>%
+  select(timestamp, temperature, boarding, day_of_week, hour_of_day, weekend) %>%
+  mutate(timestamp = as.POSIXct(timestamp, format = "%Y-%m-%d %H:%M:%S"))
+
+# Plotting the faceted scatter plot with adjusted point size, label size, and specific y-axis breaks
+temperature_boardings %>%
+  ggplot(aes(x = temperature, y = boarding, color = weekend)) +
+  geom_point(size = 0.5) +  # Adjust the size of the points (e.g., size = 0.5)
+  facet_wrap(~hour_of_day, scales = "free_y", ncol = 4) +
+  labs(
+    title = "Boardings vs. Temperature by Hour of the Day",
+    x = "Temperature",
+    y = "Boardings",
+    color = "Type"
+  ) +
+  scale_color_manual(values = c("weekday" = "blue", "weekend" = "red")) +
+  theme_minimal() +
+  theme(strip.text = element_text(size = 10)) +  # Adjust text size for hour_of_day labels
+  scale_y_continuous(  )
+```
+\
+This scatter plot shows the differences in boarding on the y-axis and temperature outside on the x-axis. This has been faceted by the day to determine if there is any variation between weekdays.
+\
+\
+When looking at these scatter plot, if the same hour and weekend status was held, there does not seem to be much variation. I believe this is because the variation comes from the changes in the temperature BECAUSE of the change in hour. Therefore if the hour does not change, the temperature can only fluctuate so much cause less variation which is why I believe that it would not ahve a noticeable effect on the number of UT students riding the bus.
 
 
 
