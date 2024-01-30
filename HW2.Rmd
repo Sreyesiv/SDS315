@@ -1,0 +1,246 @@
+---
+title: "Homework_2"
+author: "Sean Reyes"
+date: "2024-01-26"
+output:
+  html_document:
+    df_print: paged
+---
+#### UTEID: str786
+#### Github link:
+
+
+### Problem 1, Beauty or not, in the classroom
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(readr)
+library(tidyverse)
+library(DescTools)
+```
+
+
+
+```{r include=FALSE}
+profs <- read_csv("profs.csv", show_col_types = FALSE)
+
+#Problem 1 
+#Part A: Created histogram of eval variable
+
+evaluation_hist = ggplot(profs, aes(x = eval)) +
+  geom_histogram(binwidth = 0.1, fill = 'darkorange', color = 'black') +
+  labs(title = "Distribution of course Evaluation Scores",
+       x = "Evaluation Score",
+       y = "Frequency")
+fivenum(profs$eval)
+Mode(profs$eval)
+```
+
+```{r}
+print(evaluation_hist)
+```
+\
+This histogram displays the distribution of course evaluations from UT students from 1-5 in increments of 0.1 on the x-axis, and the frequency on the y-axis.
+\
+\
+Summary: This histogram shows the data skewing to the right with most scores in between the 3.5 and 4.5 range. The mode or central tendency was the score of 4 out of 5 and the second most frequent was the score 4.3 out of 5. Additionally, the minimum score was a 2.1. This shows that the majority of UT students who were in this data enjoyed the course and professor.
+\
+\
+\
+\
+```{r}
+#Part B:Use side-by-side boxplots to show the distribution of course evaluation scores by whether or not the
+#professor is a native English speaker.
+
+native_evals = profs %>%
+     select(eval, native)
+
+native_evals %>%
+     ggplot(aes(x = native, y = eval)) +
+     geom_boxplot() +
+     labs(
+         title = "Native vs. Non-native English Speaking Professors",
+         x = "Native Status",
+         y = "Evaluation Score")
+```
+
+```{r include=FALSE}
+yes_native_evals = native_evals %>%
+     group_by(native = 'yes')
+fivenum(yes_native_evals$eval)
+
+no_native_evals = native_evals %>%
+     group_by(native = 'no')
+fivenum(no_native_evals$eval)
+```
+
+\
+These box plots display the spread of evaluations on the y-axis based on if the professor was a native or non-native English speaker on the x-axis. Both box plots were placed on the same graph for ease of comparability of the median/ five number summary.
+
+Summary: The box plots show that the median course evaluation score was higher in the native English speaker category compared to the non-native English speaker professors. Additionally, the maximum score was higher in the native English speaker category while the minimum score was lower also in the native English speaker category.
+\
+\
+\
+\
+
+```{r}
+#Part C:Use a faceted histogram with two rows to compare the distribution of course evaluation scores for
+#male and female instructors
+
+male_female_evals = profs %>%
+     select(eval, gender)
+
+ ggplot(male_female_evals, aes(x= eval))+
+     geom_histogram(binwidth = 0.1, fill = "lightblue", color = "black", alpha = 0.7) +
+     labs(title = "Male vs. Female Evaluations",
+          x = "Evaluation Score",
+          y = "Frequency") +
+     facet_grid('gender')
+```
+\
+These histograms displays and compares the distribution of scores of male and female professors with the evaluation score on the x-axis, and the frequency on the y-axis.
+\
+\
+Summary: These histograms shows that both male and female professors have agreement in the way they are both skewed to the right. However, it can be seen that there is a greater frequency in higher scores from 4-5 in the male category compared to the female category. The female category of professors is shown to be slightly more spread out.
+\
+\
+\
+\
+
+```{r echo=FALSE, include=FALSE}
+#Create a scatterplot to visualize the extent to which there may be an association between the
+#professor’s physical attractiveness (x) and their course evaluations (y)
+ 
+ attractiveness_evals = profs %>%
+     select(eval, beauty)
+ 
+attractiveness_plot = ggplot(attractiveness_evals, aes(x = eval, y = beauty)) +
+     geom_point(color = "black") +
+     labs(title = "Beauty vs. Evaluation Score",
+          x = "Evaluation Score",
+          y = "Physical Attractiveness")
+cor(attractiveness_evals)
+```
+
+```{r}
+print(attractiveness_plot)
+```
+\
+This scatter plot compares the physical attractiveness of a professor in the y-axis, against the evaluation score in the x-axis in order to find a correlation between beauty and a higher score.
+\
+\
+Summary: This scatter plot shows that there is a weak positive correlation between beauty and evaluation score. Meaning that most of the more "attractive" professors received higher ratings. However many "unattractive" professors still recieved a high score (above 4).
+\
+\
+\
+\
+
+### Problem 2: Bike Sharing
+
+```{r include = FALSE}
+library(readr)
+bikeshare <- read_csv("bikeshare.csv")
+```
+
+```{r echo=FALSE}
+#Plot A: a line graph showing average hourly bike rentals (total) across all hours of the day (hr).
+
+total_hr_bikes = bikeshare %>%
+     select(hr, total)
+
+avg_bike_rental_by_hour = total_hr_bikes %>%
+  group_by(hr) %>%
+  summarize(avg_bike_rentals = mean(total))
+
+invisible(fivenum(avg_bike_rental_by_hour$avg_bike_rentals))
+
+ggplot( avg_bike_rental_by_hour, aes(x = hr, y = avg_bike_rentals)) +
+     geom_line() +
+    scale_x_continuous(breaks = seq(min(0), max(23), by = 1)) +
+     labs(title = "Average Hourly Bike Rentals",
+          x = "Hour of Day",
+          y = "Total Bikes")
+```
+\
+This line graph displays the average change in total rental bike usage throughout all hours of the day starting at 0 and ending at 23. The x-axis represents the number of bikes being rented, and the y-axis represents the hour of the day.
+\
+\
+It can be seen that the peak time of rental bike usage is at hour 17 or 3:00pm. According to the five number summary the average maximum number of bikes being used is 462. The second highest time is at hour 8 or 8:00am. The minimum however is at hour 4 or 4:00am with an average rental total of 7 bikes. This line graph lines up well with the average work day/hours and the times that most people would be commuting.
+\
+\
+\
+\
+
+```{r message=FALSE}
+#Plot B: a faceted line graph showing average bike rentals by hour of the day, faceted according to
+#whether it is a working day (workingday)
+
+workingday_avg_bikes = bikeshare %>%
+     select(hr, total, workingday)
+
+workingday_avg_plot = workingday_avg_bikes %>%
+     group_by(hr, workingday) %>%
+     summarize(avg_bike_rentals = mean(total))
+
+ggplot(workingday_avg_plot, aes(x = hr, y = avg_bike_rentals)) +
+     geom_line() +
+     scale_x_continuous(breaks = seq(min(0), max(23), by = 1)) +
+     labs(title = "Average Hourly Bike Rentals",
+          x = "Hour of Day",
+          y = "Total Bikes")+
+     facet_grid(workingday ~ .,  labeller = labeller(workingday = c("1" = "Workday", "0" = "Non-workday")))+
+  theme(strip.background = element_rect(fill = c("orange")))
+
+```
+\
+
+These two line graphs show the same relationship as the previous plot but is not faceted by whether the day is a work day or a non-work day. The non-work day is on the top and the work day is on the bottom with the same x and y axis from before.
+\
+\
+With this plot it is a lot easier to see the differences and how it being a work day can affect the total average number of bike rentals each hour. The curve is a lot more gradual in the non-workdays, and the peaks seems too be later in the after noon as opposed to 8:00am. This can be explained by most people sleeping in on their non-work days. 
+\
+\
+\
+\
+
+```{r}
+#Plot C: a faceted bar plot showing average ridership (y) during the 9 AM hour by weather situation
+#code (weathersit, x), faceted according to whether it is a working day or not. (Remember that you
+#can focus on a specific subset of rows of a data set using filter.)
+
+weather_avg_bikes <- bikeshare %>%
+  filter(hr == '9') %>%
+  select(workingday, weathersit, total) %>%
+  group_by(workingday, weathersit) %>%
+  summarize(avg_bike_rentals = mean(total), .groups = 'drop')
+
+weather_avg_plot <- weather_avg_bikes %>%
+  mutate(weathersit = factor(weathersit, levels = c("1", "2", "3", "4"))) %>%
+  ggplot(aes(x = weathersit, y = avg_bike_rentals, fill = weathersit)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_grid(workingday ~ ., scales = "free_y", labeller = labeller(workingday = c("1" = "Workday", "0" = "Non-workday"))) +
+  labs(title = "Average Bike Rentals by Weather Situation",
+       x = "Weather Situation",
+       y = "Average Bike Rentals",
+       fill = "Situation") +  # Fixed the typo here
+  scale_x_discrete(labels = c("1" = "Clear/few clouds", "2" = "Mist/cloudy", "3" = "Light snow/rain", "4" = "Heavy Rain/Ice")) +
+  coord_cartesian(ylim = c(0, 300)) +
+  theme_minimal()
+
+print(weather_avg_plot)
+```
+\
+This bar graph shows the relationship between the total average bike rentals during the hour of 9:00am for 4 different weather situations, however the data did not include any under the 4th condition hence why there are only 3 bars. Each bar represents a different weather situation from clear, to misty, to snowing/raining. The data is also faceted by work and non-work days. The x and y axis are all the same as the previous plots with the addition of the weather.
+\
+\
+This bar graph shows that as the conditions go from cloudy to rainy and everything in between, the ridership of rental bikes decline. This is further emphasized by the fact that there is no data on any person riding at 9:00am in situation 4 weather conditions which was heavy rain and ice. Moreover, it can be seen that the non-workday rental bike usage was overall lower than on a work day.
+\
+\
+\
+\
+
+### Problem 3: Capital Metro UT Ridership
+
+
+
+
+
