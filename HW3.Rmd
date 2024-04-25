@@ -1,0 +1,149 @@
+---
+title: "HW 3"
+author: "Sean Reyes"
+date: "2024-02-07"
+output: html_document
+---
+
+#### UTEID: str786
+#### Github link:
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(readr)
+```
+
+### Problem 1
+
+```{r include=FALSE}
+creatinine <- read_csv("Downloads/Statistical Thinking/creatinine.csv")
+
+creatclear_cor = lm(creatclear ~ age, data = creatinine)
+coef(creatclear_cor)
+147.8129158-0.6198159*55
+```
+
+A) The creatinine clearance rate that we can expect from an individual who is 55 years old is exactly 113.723. This number was found by using the coef() function to find the intercept and average slope of the line, and then utilizing those numbers in the equation 
+y = 147.8129158 - 0.6198159(x) with y being the expected clearance rate and x being the age.
+\
+
+B) Based on the data, the creatinine clearance rate decreases by 0.6198159 mL/minute per year. This was determined because this is the slope of the data given by using the coef() function, meaning that this is how much change occurs between each x value. 
+\
+
+```{r include=FALSE}
+147.8129158-0.6198159*40
+#Should be 123.0203 rounded => 123
+
+147.8129158-0.6198159*60
+#Should be 110.624 rounded => 111
+```
+
+C) The person with a healthier creatinine clearance rate for their age is the 40-year-old with a rate of 135. This is because using the equation from before I plugged in 40 for the age: 147.8129158-0.6198159(40). This resulted in the number 123 mL/minute which is what an average person's clearance rate is for 40 years old. However because the woman's actual rate is much higher than 123 by 12mL/minute, she has an above average (healthier) clearance rate. In comparison to the 60-year-old with a rate of 112, using the same equation but plugging in 60, this individual is seen to have a normal clearance rate because the average is 111.
+\
+\
+\
+\
+
+### Problem 2
+
+```{r include=FALSE}
+marketmodel <- read_csv("Downloads/Statistical Thinking/marketmodel.csv")
+```
+The beta of a stock is essentially the measurement of systematic risk that a firm may have that can not be taken away. Relating this to the regression equation, Beta is the percent change (slope) in a stocks return when a 1% change in the total market market rate of return (all stocks) occurs. An example of this would be that when a firms beta(B) is 0.35, when the market rate of return(X) goes up 1%, the firms return will go up 35%. This also applies when the market goes down 1%, the firms return will now go DOWN 35%. This is correlated to the power law that we learned in class which is when a linear regression is used with both x and y variables being on the log scale. Whenever a stocks beta is high that means the reward is high but so is the risk. When a stocks beta is for example 1.5, if the market goes up by 1% is will increase by 150%, but when the market goes down it will fall that same amount, hence the phrase high risk high reward. 
+
+```{r include=FALSE}
+#separating into subsets
+AAPL = marketmodel%>%
+     select(Date, SPY, AAPL)
+GOOG = marketmodel%>%
+     select(Date, SPY, GOOG)
+MRK = marketmodel%>%
+     select(Date, SPY, MRK)
+JNJ = marketmodel%>%
+     select(Date, SPY, JNJ)
+WMT = marketmodel%>%
+     select(Date, SPY, WMT)
+TGT = marketmodel%>%
+     select(Date, SPY, TGT)
+#I am not sure what is wrong with this code, I know I have to use Log Log but it does not let me knit if i do.
+## lm_aapl = lm(log(AAPL) ~ log(SPY), data = AAPL)
+## ggplot(AAPL)+
+## geom_point(aes(x= log(SPY), y = log(AAPL)))+
+## geom_abline(intercept = , slope = , color = 'purple') 
+```
+
+```{r echo=FALSE}
+#without log results in coef
+lm_aapl = lm(AAPL ~ SPY, data = AAPL)
+coef(lm_aapl)
+
+#tried using coef from no-log on top of point graph with log-log
+ggplot(AAPL)+
+  geom_point(aes(x= log(SPY), y = log(AAPL)))+
+  geom_abline(intercept = 0.009189277, slope = 1.065601182, color = 'purple') 
+#does not fit correctly, does not go through majority
+```
+```
+\
+\
+\
+\
+
+### Problem 3
+```{r include=FALSE}
+covid <- read_csv("Downloads/Statistical Thinking/covid.csv")
+
+#create exponential model on a log scale for italy & spain
+italy_filtered = covid %>%
+     filter(country == 'Italy')
+lm_italy = lm(log(deaths) ~ days_since_first_death, data = italy_filtered)
+coef(lm_italy)
+log(2)/0.183218 #doubling time calculation
+
+
+spain_filtered = covid %>%
+     filter(country == 'Spain')
+lm_spain = lm(log(deaths) ~ days_since_first_death, data = spain_filtered)
+coef(lm_spain)
+log(2)/0.2762447 #doubling time calculation
+```
+The estimated growth rate of the Covid-19 deaths in Italy was 0.183, where as Spain's estimated Covid-19 death growth rate was 0.276.The doubling time for Italy was approximately 4 days, and for Spain was approximately 3 days.
+\
+\
+
+```{r echo=FALSE}
+#plot of all covid datapoints + regression lines 
+ggplot(covid) +
+  geom_point(aes(x = days_since_first_death, y = log(deaths))) +
+  geom_abline(aes(intercept = 1.018602, slope = 0.183218, color = "Italy"), show.legend = TRUE) +
+  geom_abline(aes(intercept = 0.4652173, slope = 0.2762447, color = "Spain"), show.legend = TRUE) +
+  labs(
+    title = 'Deaths over time', 
+    x = 'Days since first death',
+    y = 'Deaths',
+    color = "Country"
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Italy" = "darkgreen", "Spain" = "pink"), 
+                     labels = c("Italy", "Spain")) +
+  guides(color = guide_legend(title = "Country"))
+```
+
+\
+\
+
+### Problem 4
+
+```{r include=FALSE}
+milk <- read_csv("Downloads/Statistical Thinking/milk.csv")
+
+lm_milk = lm(log(sales) ~ log(price), data = milk)
+coef(lm_milk)
+```
+The estimated elasticity for the price of the demand for milk is -1.628578 or approximately -1.63. This was found by using a relative proportional power law that took both the sales and price variables on a log scale. This means that when the price of milk increase by 1% the consumers will want to by 1.63% LESS of it on average.
+
+\
+\
+\
