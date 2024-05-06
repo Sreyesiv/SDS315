@@ -1,0 +1,129 @@
+---
+title: "HW4"
+author: "Sean Reyes"
+date: "2024-03-20"
+output: html_document
+---
+
+#### UTEID: str786
+#### Github link:
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(mosaic)
+
+gasprices <- read_csv("Downloads/Statistical Thinking/gasprices.csv")
+
+```
+
+#### Claim A:
+Gas stations charge more if there is no direct competition in sight. 
+
+
+#### Evidence:
+```{r echo=FALSE}
+# Theory A: found mean by whether or not competitors nearby, then bootstrapped for confidence interval of mean
+mean(Price ~ Competitors, data = gasprices)
+
+boot_pricecomp = do(10000)*mean(Price ~ Competitors, data=mosaic :: resample(gasprices))
+
+confint(boot_pricecomp, level = .95)
+```
+
+Based on the statistical calculations, the gas prices of stations with no competition in sight had a mean price that fell between 1.85 and 1.90 with a 95% confidence (rounded to the nearest hundredth), while those that did have competition in sight had a mean price between 1.83 and 1.87 with 95% confidence (rounded to the nearest hundredth). The effect of this theory is not that large since gas stations without competition in sight on average tend to charge 2 to 3 cents more with 95% confidence. After re-sampling numerous times, the average prices were 1.88 +-0.2 dollars per gallon for no competition, and 1.85 +-0.2 dollars per gallon with competition, and this difference in mean is also shown by this box plot:
+
+```{r echo=FALSE}
+#boxplot comparing medians of prices faceted by competitors=yes/no
+price_competitors = gasprices%>%
+  select(Price, Competitors)
+
+ggplot(price_competitors)+
+  geom_boxplot(aes(y=Price))+
+  facet_grid(~Competitors)
+```
+
+#### Conclusion: 
+The data supports the claim that gas stations charge more when there are no competition in sight by about 2-3 cents per gallon with 95% confidence.
+
+\
+
+#### Claim B: 
+Gas prices are more expensive in a richer area of the city.
+
+```{r echo=FALSE}
+income_price = gasprices%>%
+  select(Price, Income)%>%
+  arrange(Income)
+income_stats = favstats(Price ~ Income, data = income_price)%>%
+  arrange(Income)
+
+ggplot(income_price)+
+  geom_boxplot(aes(x=Income, y=Price))+
+  facet_grid(~Income)
+```
+
+(Highway may have effect = uncertainty)
+
+\
+
+#### Claim C:
+Gas stations at stoplights charge more
+```{r} 
+#statistical summary calculation
+stoplight_price = gasprices%>%
+  select(Price, Stoplight)
+
+ggplot(stoplight_price)+
+  geom_boxplot(aes(y=Price))+
+  facet_grid(~Stoplight)
+
+favstats(~Price, Stoplight, data = stoplight_price)
+mean(stoplight_price$Price ~ stoplight_price$Stoplight)
+
+bootstrap_stoplight = do(10000)*mean(Price ~ Stoplight, data=mosaic::resample(stoplight_price))
+confint(bootstrap_stoplight, level = 0.95)
+```
+
+\
+
+#### Claim D:
+Gas stations with direct highway access charge more
+```{r}
+highway_price = gasprices%>%
+  select(Price, Highway)
+
+ggplot(highway_price)+
+  geom_boxplot(aes(y=Price))+
+  facet_grid(~Highway)
+
+mean(highway_price$Price ~ highway_price$Highway)
+
+bootstrap_highway = do(10000)*mean(Price ~ Highway, data = mosaic::resample(highway_price))
+confint(bootstrap_highway, level = 0.95)
+```
+
+\
+
+
+#### Claim E:
+Shell gas stations charge more than any other non-Shell brands 
+
+```{r}
+shell_price = gasprices%>%
+  select(Price, Name)%>%
+  mutate(is_shell = ifelse(Name == 'Shell',
+                           yes ='Y', no='N'))
+ggplot(shell_price)+
+  geom_boxplot(aes(y=Price))+
+  facet_grid(~is_shell)
+
+mean(shell_price$Price ~ shell_price$is_shell)
+
+boot_shell = do(10000)*mean(Price ~ is_shell, data = mosaic::resample(shell_price))
+confint(boot_shell, level = 0.95)
+```
+
+
