@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 #### UTEID: str786
-#### Github Link: https://github.com/Sreyesiv/SDS313/blob/main/HW2.Rmd
+#### Github Link: https://github.com/Sreyesiv/SDS315/blob/main/HW2.Rmd
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
