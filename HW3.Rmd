@@ -22,7 +22,7 @@ library(kableExtra)
 ```
 
 #### UTEID: str786
-#### Github link:
+#### Github link: https://github.com/Sreyesiv/SDS315/blob/main/HW3.Rmd
 
 ### Problem 1
 
