@@ -1,0 +1,140 @@
+---
+title: "HW4"
+author: "Sean Reyes"
+date: "2025-02-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(mosaic)
+library(scales)
+library(kableExtra)
+
+letter_frequencies = read.csv("/Users/seanreyes/downloads/letter_frequencies.csv")
+
+```
+#### UTEID: str786
+#### Github link: 
+
+### Problem 1: Iron Bank
+
+Null Hypothesis: The Iron Bank's 70 flagged trades in 2021 are no different than the expected amount of trades that are normally flagged year to year.
+
+Test statistic: Difference in percent of trades that were flagged from the total 
+
+```{r echo=FALSE}
+
+# Parameters
+n_trades <- 2021  # Total number of trades
+baseline_rate <- 0.024  # Baseline flagging rate (2.4%)
+n_simulations <- 100000  # Number of Monte Carlo simulations
+observed_flagged <- 70  # Observed number of flagged trades
+
+# Monte Carlo simulation
+simulated_flagged <- replicate(n_simulations, {
+  sum(rbinom(n_trades, 1, baseline_rate))  # Simulate flagged trades
+})
+
+# Calculate p-value
+p_value <- mean(simulated_flagged >= observed_flagged)
+
+# Plot the distribution of flagged trades under the null hypothesis
+hist(simulated_flagged, breaks = 50, col = "lightblue",
+     xlab = "Number of Flagged Trades", ylab = "Frequency",
+     main = "Distribution of Flagged Trades Under Null Hypothesis")
+abline(v = observed_flagged, col = "red", lwd = 2, lty = 2)
+legend("topright", legend = c("Observed Flagged Trades (70)"),
+       col = c("red"), lty = 2, lwd = 2)
+
+# Print the p-value
+cat("The p-value is:", p_value, "\n")
+```
+\
+Conclusion: Since the p-value is very low in this case 0.00208 this suggests that the data does not fall in line with the expected percentage. The null hypothesis is rejected meaning that there is a significant difference in Iron Bank's flagged trades.
+
+\
+
+
+### Problem 2: Health Inspections
+
+Null Hypothesis: The Gourmet Bites health code violations are no different from the expected city wide average of 3% due to random issues that can occur.
+
+Test statistic: Percentage of health violations to total health inspections of Gourmet Bites 
+
+```{r echo=FALSE}
+
+# Parameters
+n_inspections <- 50  # Number of inspections for Gourmet Bites
+baseline_rate <- 0.03  # Baseline violation rate (3%)
+n_simulations <- 100000  # Number of Monte Carlo simulations
+observed_violations <- 8  # Observed number of violations
+
+# Monte Carlo simulation
+simulated_violations <- replicate(n_simulations, {
+  sum(rbinom(n_inspections, 1, baseline_rate))  # Simulate violations
+})
+
+# Calculate p-value
+p_value <- mean(simulated_violations >= observed_violations)
+
+# Plot the distribution of violations under the null hypothesis
+hist(simulated_violations, breaks = 50, col = "lightgreen",
+     xlab = "Number of Health Code Violations", ylab = "Frequency",
+     main = "Distribution of Violations Under Null Hypothesis")
+abline(v = observed_violations, col = "red", lwd = 2, lty = 2)
+legend("topright", legend = c("Observed Violations (8)"),
+       col = c("red"), lty = 2, lwd = 2)
+
+# Print the p-value
+cat("The p-value is:", p_value, "\n")
+```
+\
+Conclusion: This data shows that the 8 violations falls outside of the plausible values of the expected city wide average, and with a small p-value of 0.00013 this means we reject the null hypothesis and say that there is a significant difference in health code violations from Gourmet Bites and the rest of the city.
+
+\
+
+### Problem 3: Evaluating Jury Selection
+
+Null Hypothesis: The null hypothesis is that the Jurors picked by the judge matches the countries population proportions
+
+Test statistic: Chi Squared test that compares the difference between observed and expected accounts. Where Oi = observed counts and Ei = expected counts. The expected is calculated by multiplying the total jurors and the given population proportions for each group.
+```{r echo=FALSE}
+# Observed counts
+observed <- c(85, 56, 59, 27, 13)
+
+# Expected proportions
+expected_proportions <- c(0.30, 0.25, 0.20, 0.15, 0.10)
+
+# Total number of jurors
+total_jurors <- 240
+
+# Expected counts
+expected <- expected_proportions * total_jurors
+
+# Chi-squared test
+chi_squared_stat <- sum((observed - expected)^2 / expected)
+p_value <- 1 - pchisq(chi_squared_stat, df = length(observed) - 1)
+
+# Print results
+cat("Chi-squared statistic:", chi_squared_stat, "\n")
+cat("p-value:", p_value, "\n")
+
+```
+
+Conclusion: This data suggests that there IS a significant difference between the expected population proportion and the proportion of jurors chosen by the judge therefore the null hypothesis is rejected.
+
+Other explanations: There may be certain groups of people who are more likely to be excused from the jury and/or less likely to respond the jury summons.
+
+\
+
+### Problem 4: LLM Watermarking
+
+```{r echo=FALSE}
+
+```
+
+
