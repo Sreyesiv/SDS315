@@ -1,0 +1,280 @@
+---
+title: "HW7"
+author: "Sean Reyes"
+date: "2025-04-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+#### UTEID: str786
+#### Github link: 
+
+### Problem 1
+
+Part A: Load and examine the data
+```{r, echo=FALSE}
+armfold = read.csv("/Users/seanreyes/downloads/armfold.csv")%>%
+  mutate(Sex = tolower(trimws(Sex)))  # makes everything lowercase and trims spaces
+
+
+# View number of male and female students
+armfold %>% count(Sex)
+
+# Calculate sample proportions
+prop_table <- armfold %>%
+  group_by(Sex) %>%
+  summarise(
+    count = n(),
+    left_top = sum(LonR_fold == 1),
+    prop_left_top = mean(LonR_fold == 1)
+  )
+
+prop_table
+
+```
+\
+\
+
+Part B: Observed Difference in Proportions (Male - Female)
+```{r, echo=FALSE}
+# Extract sample proportions safely
+p_male <- prop_table %>% filter(Sex == "male") %>% pull(prop_left_top)
+p_female <- prop_table %>% filter(Sex == "female") %>% pull(prop_left_top)
+
+# Check if values are correctly extracted
+print(paste("Proportion Male:", p_male))
+print(paste("Proportion Female:", p_female))
+
+# Compute observed difference
+obs_diff <- p_male - p_female
+obs_diff
+
+```
+\
+\
+
+Part C: 95% Confidence Interval for Difference in Proportions
+```{r, echo=FALSE}
+# Extract counts safely
+n_male <- prop_table %>% filter(Sex == "male") %>% pull(count)
+n_female <- prop_table %>% filter(Sex == "female") %>% pull(count)
+
+# Standard error calculation
+se_diff <- sqrt(
+  (p_male * (1 - p_male) / n_male) +
+  (p_female * (1 - p_female) / n_female)
+)
+
+# z* value for 95% CI
+z_star <- 1.96
+
+# Confidence interval
+ci_lower <- obs_diff - z_star * se_diff
+ci_upper <- obs_diff + z_star * se_diff
+
+c(ci_lower, ci_upper)
+
+```
+Part D:
+If the sampling process is repeated numerous times, we can expect that 95% of the resulting intervals would contain the trun difference in proportions between the two groups.
+\
+
+Part E:
+The standard error represent the normal amount of variability in the difference of sample proportions due to randomness. This essentially measures the proportions fluctuate between samples
+\
+
+Part F:
+The sampling distribution is the range of the difference in sample proportions that would be observed if many random samples were taken from the same populations.
+\
+
+Part G:
+The Central limit theorem justifies using the normal distribution to show the sampling distribution of the proportion difference.
+\
+
+Part H:
+Since this interval includes 0 this means that there CAN be no difference in the given data meaning that it is not statistically significant that there is a difference between males and females.
+
+Part I:
+Yes, the confidence interval would change from sample to sample due to the specific data collected, but 95% of all intervals constructed would have the true difference in its range.
+
+\
+\
+\
+\
+
+### Problem 2: Get out the vote
+
+```{r, echo=FALSE}
+library(Matching)
+library(MatchIt)
+
+turnout <- read.csv("/Users/seanreyes/downloads/turnout.csv")
+
+
+turnout <- turnout %>%
+  mutate(
+    GOTV_call = as.integer(GOTV_call),
+    voted1998 = as.integer(voted1998),
+    voted1996 = as.integer(voted1996),
+    MAJORPTY = as.integer(MAJORPTY)
+  )
+```
+
+Part A:
+Proportion who voted in 1998:
+0.6478 (received GOTV call)
+0.4442 (did not receive call)
+
+Observed difference: 0.2035
+
+The 95% confidence interval for the difference in 1998 turnout between those who received a GOTV call and those who did not was [0.1432, 0.2638] and was statistically significant. This means that those who received a call were between 14.3 and 26.4 percent points more likely to vote.
+```{r, echo=FALSE}
+### --- Part A --- ###
+# Proportion voted in 1998 by GOTV call status
+prop_table <- turnout %>%
+  group_by(GOTV_call) %>%
+  summarize(
+    prop_voted1998 = mean(voted1998),
+    count = n(),
+    .groups = "drop"
+  )
+
+# Extract values
+p_called <- prop_table %>% filter(GOTV_call == 1) %>% pull(prop_voted1998)
+n_called <- prop_table %>% filter(GOTV_call == 1) %>% pull(count)
+p_nocall <- prop_table %>% filter(GOTV_call == 0) %>% pull(prop_voted1998)
+n_nocall <- prop_table %>% filter(GOTV_call == 0) %>% pull(count)
+
+# Observed difference
+obs_diff <- p_called - p_nocall
+
+# Standard error
+se_diff <- sqrt((p_called * (1 - p_called) / n_called) + (p_nocall * (1 - p_nocall) / n_nocall))
+z_star <- 1.96
+ci_lower <- obs_diff - z_star * se_diff
+ci_upper <- obs_diff + z_star * se_diff
+
+c(ci_lower, ci_upper)  # 95% CI
+```
+
+Part B:
+The GOTV group has a 71.35 rutnout rate in 1996 compared to 53.1% in the no-call group. This was a difference of 18.2 percentage points with a 95% confidence interval of 0.1245, 0.2390]
+
+The GOTV group was almost 8.9 years older on average which suggest that the difference found in part A may overestimate the GOTV effectiveness because they were not similar at the baseline level.
+```{r, echo=FALSE}
+
+# Compare distributions of confounders by GOTV_call group
+turnout %>%
+  group_by(GOTV_call) %>%
+  summarize(
+    prop_voted1996 = mean(voted1996),
+    mean_age = mean(AGE, na.rm = TRUE),
+    prop_majorpty = mean(MAJORPTY),
+    count = n(),
+    .groups = "drop"
+  )
+
+# Confidence intervals for confounder differences:
+prop96_diff <- turnout %>%
+  group_by(GOTV_call) %>%
+  summarize(prop96 = mean(voted1996), n = n(), .groups = "drop")
+
+p1 <- prop96_diff$prop96[2]
+p2 <- prop96_diff$prop96[1]
+n1 <- prop96_diff$n[2]
+n2 <- prop96_diff$n[1]
+se_prop96 <- sqrt((p1 * (1 - p1) / n1) + (p2 * (1 - p2) / n2))
+ci_prop96 <- c((p1 - p2) - 1.96 * se_prop96, (p1 - p2) + 1.96 * se_prop96)
+
+ci_prop96
+
+# You can repeat similar logic for AGE and MAJORPTY as well
+```
+
+Part C: Matching
+In 1996 both groups had a 71.3% turnout with a mean age of about 58.3 years. The difference between those who reveived a GOTV call and those who did not is between 1.3 and 14.4 percentage points with a 95% confidence interval of [0.0129, 0.1442]. This supports that conclusion in Part B that there was some overestimation involved in the original calculation in Part A. 
+
+The effect is much smaller which points to the issue of confounding variables affecting the data, however after matching the difference is still statistically significant becuase it does not include zero.
+```{r, echo=FALSE}
+match_model <- matchit(GOTV_call ~ voted1996 + AGE + MAJORPTY,
+                       data = turnout, method = "nearest", ratio = 5)
+
+matched_data <- match.data(match_model)
+
+# Check balance on confounders after matching
+matched_data %>%
+  group_by(GOTV_call) %>%
+  summarize(
+    prop_voted1996 = mean(voted1996),
+    mean_age = mean(AGE, na.rm = TRUE),
+    prop_majorpty = mean(MAJORPTY),
+    count = n(),
+    .groups = "drop"
+  )
+
+### Repeat analysis from Part A using matched data ###
+matched_props <- matched_data %>%
+  group_by(GOTV_call) %>%
+  summarize(
+    prop_voted1998 = mean(voted1998),
+    count = n(),
+    .groups = "drop"
+  )
+
+# Extract values from matched data
+p_called_m <- matched_props %>% filter(GOTV_call == 1) %>% pull(prop_voted1998)
+n_called_m <- matched_props %>% filter(GOTV_call == 1) %>% pull(count)
+p_nocall_m <- matched_props %>% filter(GOTV_call == 0) %>% pull(prop_voted1998)
+n_nocall_m <- matched_props %>% filter(GOTV_call == 0) %>% pull(count)
+
+# Observed difference
+obs_diff_m <- p_called_m - p_nocall_m
+
+# Standard error and CI
+se_diff_m <- sqrt((p_called_m * (1 - p_called_m) / n_called_m) + (p_nocall_m * (1 - p_nocall_m) / n_nocall_m))
+ci_lower_m <- obs_diff_m - z_star * se_diff_m
+ci_upper_m <- obs_diff_m + z_star * se_diff_m
+
+c(ci_lower_m, ci_upper_m)  # 95% CI after matching
+
+```
+
+```{r, echo=FALSE}
+#Proportions and Confidence Interval for Matched Data
+p_treated_matched <- matched_data %>%
+  filter(GOTV_call == 1) %>%
+  summarize(prop = mean(voted1998)) %>%
+  pull(prop)
+
+p_control_matched <- matched_data %>%
+  filter(GOTV_call == 0) %>%
+  summarize(prop = mean(voted1998)) %>%
+  pull(prop)
+
+# Calculate standard error for matched data
+n_treat_matched <- sum(matched_data$GOTV_call == 1)
+n_control_matched <- sum(matched_data$GOTV_call == 0)
+
+se_diff_matched <- sqrt((p_treated_matched * (1 - p_treated_matched) / n_treat_matched) + 
+                        (p_control_matched * (1 - p_control_matched) / n_control_matched))
+
+# Z-value for 95% confidence interval
+margin_of_error_matched <- z_star * se_diff_matched
+
+# Confidence interval for the difference in proportions (matched data)
+ci_lower_matched <- (p_treated_matched - p_control_matched) - margin_of_error_matched
+ci_upper_matched <- (p_treated_matched - p_control_matched) + margin_of_error_matched
+
+# Display results for matched data
+list(
+  treated_prop_matched = p_treated_matched,
+  control_prop_matched = p_control_matched,
+  diff_matched = p_treated_matched - p_control_matched,
+  conf_interval_matched = c(ci_lower_matched, ci_upper_matched)
+)
+
+```
