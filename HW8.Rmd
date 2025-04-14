@@ -1,0 +1,164 @@
+---
+title: "HW8"
+author: "Sean Reyes"
+date: "2025-04-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(boot)
+
+```
+
+#### UTEID: str786
+#### Github link:
+
+### Problem 1
+
+Part A:
+```{r, echo=FALSE}
+# Load the data
+creatinine = read.csv("/Users/seanreyes/downloads/creatinine.csv")
+
+# Fit linear regression model
+model <- lm(creatclear ~ age, data = creatinine)
+summary(model)
+
+# Extract coefficients
+intercept <- coef(model)[1]
+slope <- coef(model)[2]
+```
+Using the regression equation:
+creatclear = intercept + slope * age, the creatinine clearace rate for 55 year-old is 113.7. This was found because 147.81 represents the clearance rate at birth and the slope of -0.62 is the rate that it deacreases every year which is multiplied by age to result in the predicted clearance rate at age 55.
+
+```{r, echo=FALSE}
+pred_55 <- intercept + slope * 55
+pred_55
+```
+
+\
+
+Part B:
+\
+Creatinine clearance rate decreases by 0.62 mL minute per year. This was determined form the slope of the model becuase it quantifies the amount of decline that occurs within a year.
+
+\
+
+Part C:
+```{r, echo=FALSE}
+expected_40 <- intercept + slope * 40
+expected_60 <- intercept + slope * 60
+
+residual_40 <- 135 - expected_40
+residual_60 <- 112 - expected_60
+```
+The 40 year olds clearance rate is 11.99 mL/minute above their predicted rate adjusted for their age, but the 60 year olds is only 1.39mL/minute above therefore the 40 year-old's  rate is healthier compared to their age groups normal/expected baseline rate.
+
+\
+\
+
+### Problem 2
+
+Part 1:
+```{r, echo=FALSE}
+
+covid = read.csv("/Users/seanreyes/downloads/covid.csv")%>%
+  filter(deaths > 0)  # Remove days with zero deaths for log transformation
+
+# Define growth model function
+fit_growth <- function(data) {
+  model <- lm(log(deaths) ~ days_since_first_death, data = data)
+  growth_rate <- coef(model)[2]
+  doubling_time <- log(2)/growth_rate
+  return(c(growth_rate, doubling_time))
+}
+
+# Bootstrap function
+boot_growth <- function(data, indices) {
+  d <- data[indices,]
+  return(fit_growth(d))
+}
+
+# Analyze Italy
+italy <- covid %>% filter(country == "Italy")
+italy_boot <- boot(italy, boot_growth, R = 1000)
+italy_est <- fit_growth(italy)
+italy_growth_ci <- boot.ci(italy_boot, index = 1, type = "perc")
+italy_doubling_ci <- boot.ci(italy_boot, index = 2, type = "perc")
+
+# Analyze Spain
+spain <- covid %>% filter(country == "Spain")
+spain_boot <- boot(spain, boot_growth, R = 1000)
+spain_est <- fit_growth(spain)
+spain_growth_ci <- boot.ci(spain_boot, index = 1, type = "perc")
+spain_doubling_ci <- boot.ci(spain_boot, index = 2, type = "perc")
+
+# Print results for Italy
+cat("ITALY RESULTS:\n")
+cat(sprintf("Growth rate: %.3f (95%% CI: [%.3f, %.3f])\n", 
+            italy_est[1], italy_growth_ci$percent[4], italy_growth_ci$percent[5]))
+cat(sprintf("Doubling time: %.1f days (95%% CI: [%.1f, %.1f])\n\n", 
+            italy_est[2], italy_doubling_ci$percent[4], italy_doubling_ci$percent[5]))
+```
+
+Part 2:
+```{r, echo=FALSE}
+# Print results for Spain
+cat("SPAIN RESULTS:\n")
+cat(sprintf("Growth rate: %.3f (95%% CI: [%.3f, %.3f])\n", 
+            spain_est[1], spain_growth_ci$percent[4], spain_growth_ci$percent[5]))
+cat(sprintf("Doubling time: %.1f days (95%% CI: [%.1f, %.1f])\n\n", 
+            spain_est[2], spain_doubling_ci$percent[4], spain_doubling_ci$percent[5]))
+```
+
+Part 3:
+```{r, echo=FALSE}
+# Generate the plot
+cat("PLOT GENERATED: See graphical output\n")
+ggplot(covid, aes(x = days_since_first_death, y = deaths, color = country)) +
+  geom_line(linewidth = 1) +
+  scale_y_continuous(trans = "log10", labels = scales::comma) +
+  scale_color_manual(values = c("Italy" = "#1f77b4", "Spain" = "#ff7f0e")) +
+  labs(x = "Days since first death", 
+       y = "Daily deaths (log scale)",
+       title = "COVID-19 Daily Deaths During First Wave",
+       color = "Country") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "top")
+```
+
+
+
+### Problem 3
+```{r, echo=FALSE}
+# Load data
+milk = read.csv("/Users/seanreyes/downloads/milk.csv")
+
+# Fit log-log regression model
+model <- lm(log(sales) ~ log(price), data = milk)
+beta <- coef(model)[2]
+
+# Bootstrap function for elasticity
+boot_elasticity <- function(data, indices) {
+  d <- data[indices,]
+  model <- lm(log(sales) ~ log(price), data = d)
+  return(coef(model)[2])
+}
+
+# Run bootstrap (1000 replications)
+set.seed(123) # for reproducibility
+elasticity_boot <- boot(milk, boot_elasticity, R = 1000)
+
+# Get confidence intervals
+beta_ci <- boot.ci(elasticity_boot, type = "perc")
+
+# Print results
+cat("PRICE ELASTICITY OF DEMAND FOR MILK:\n")
+cat(sprintf("Estimated elasticity (β): %.3f\n", beta))
+cat(sprintf("95%% Confidence Interval: [%.3f, %.3f]\n\n", 
+            beta_ci$percent[4], beta_ci$percent[5]))
+
+```
+To estimate the elasticity a log-log regression model with sales and price was used. After bootstrap smaple the price elasticity was -1.217 with a 95% confidence interval of -1.352 to -1.093. This suggests that the price increase reduces demand by about 1.22%.
