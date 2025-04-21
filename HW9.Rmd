@@ -1,0 +1,55 @@
+---
+title: "HW9"
+author: "Sean Reyes"
+date: "2025-04-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Githublink: 
+##Problem 1
+
+#### Part A
+```{r, echo = FALSE}
+library(tidyverse)
+solder = read.csv("/Users/seanreyes/downloads/solder.csv")
+
+# Plot 1: Skips by Opening size
+ggplot(solder, aes(x = Opening, y = skips)) +
+  geom_boxplot() +
+  labs(title = "Number of Solder Skips by Solder Gun Opening Size",
+       caption = "Boxplot showing that larger solder gun openings are associated with more skips (flaws). The median number of skips increases from small to medium to large openings.")
+
+# Plot 2: Skips by Solder thickness
+ggplot(solder, aes(x = Solder, y = skips)) +
+  geom_boxplot() +
+  labs(title = "Number of Solder Skips by Solder Alloy Thickness",
+       caption = "Boxplot showing that thin solder alloy is associated with more skips (flaws) compared to thick solder alloy.")
+```
+
+```{r, echo=FALSE}
+model <- lm(skips ~ Opening * Solder, data = solder)
+library(moderndive)
+get_regression_table(model, conf.level = 0.95)
+```
+
+#### Part C: Interpretation of coefficients
+Intercept: The expected number of skips for small opening with thick solder (reference category).
+
+Openingmedium: The difference in skips between medium and small openings when using thick solder.
+
+Openinglarge: The difference in skips between large and small openings when using thick solder.
+
+Solderthin: The difference in skips between thin and thick solder when using small opening.
+
+Openingmedium:Solderthin: The additional effect on skips when combining medium opening with thin solder (beyond their individual effects).
+
+Openinglarge:Solderthin: The additional effect on skips when combining large opening with thin solder (beyond their individual effects).
+
+#### Part D: Recommended combination
+Based on the analysis, I would recommend using small opening with thick solder. This combination shows the lowest number of skips in the visualizations and the regression model confirms that both small openings and thick solder are associated with fewer skips, with no significant interaction effects that would suggest a better alternative combination.
+
+
